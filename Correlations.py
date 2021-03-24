@@ -1,4 +1,6 @@
-# Thomas Delvaux
+### About
+
+# Thomas Delvaux and Anish Chaluvadi
 # ME-6930 036
 # 03/24/2021
 
@@ -8,8 +10,10 @@
 # For data obtained from:
 # https://www.kaggle.com/c/titanic/data
 
-# Import Necessary Libraries
-#import numpy as np # Linear algebra
+
+### Import Necessary Libraries
+
+import numpy as np # Linear algebra
 import pandas as pd # Data processing
 import os # File locating
 import seaborn as sns # Constructing graphs
@@ -27,12 +31,18 @@ answer_csv = r'data\gender_submission.csv' # Answerkey dataset
 # Find directory this python script is located in
 current_file = os.path.abspath(os.path.dirname(__file__))
 
-# 
+# Full data filepaths
 train_path = os.path.join(current_file, train_csv)
+test_path = os.path.join(current_file, test_csv)
+answer_path = os.path.join(current_file, answer_csv)
 
 
-# Create Pandas Data Frame
+# Create Pandas Data Frames
 train_df = pd.read_csv(train_csv, index_col=0)
+test_df = pd.read_csv(train_csv, index_col=0)
+answer_df = pd.read_csv(train_csv, index_col=0)
+
+combine = [train_df, test_df] # Useful for filling in empty entries
 #print(df.columns)
 #print(df.shape)
 
@@ -40,26 +50,91 @@ train_df = pd.read_csv(train_csv, index_col=0)
 print(train_df.isnull().sum())
 
 # Create Heatmap of Entries Missing Data
-sns.heatmap(train_df.isnull())
-plt.tight_layout()
-plt.show()
+# (uncomment the below lines to obtain the plot)
+# sns.heatmap(train_df.isnull())
+# plt.tight_layout()
+# plt.show()
 
 
 ### Data Cleanup
-# Removing unusable columns
-#df_small = df.iloc[:,:6] # taking all rows but only 6 columns
-train_df_s = train_df.copy()
-train_df_s.drop(['name','ticket','cabin'],inplace=True,axis=1)
 
-# Rename columns
-train_df_s.rename({'home.dest' : 'Home / Destination', 'sex' : 'male'}, inplace=True, axis=1)
+for dataset in combine: # Perform this action for both the testing and training datasets
+    #  Removing unused columns
+    dataset.drop(['Name','Ticket','Cabin'],inplace=True,axis=1)
 
-# Convert male into usable binary data
-train_df_s.male = train_df_s.male.apply(lambda x : int(x == 'male'))
-# 1 = Male; 0 = Female
+
+    ## Making sex data usable
+
+    # Rename column
+    dataset.rename({'Sex' : 'Male'}, inplace=True, axis=1)
+    
+    # Convert male column into usable binary data
+    dataset['Male'] = dataset['Male'].map( {'female': 0, 'male': 1} ).astype(int)
+
+
+## Age
+
+# Method 1 based on:
+# https://www.kaggle.com/startupsci/titanic-data-science-solutions
+
+# Plot relationship between gender, age, and pclass
+# (uncomment the below lines to obtain the plot)
+# grid = sns.FacetGrid(train_df, row='Pclass', col='Male', height=2.2, aspect=1.6)
+# grid.map(plt.hist, 'Age', alpha=.5, bins=20)
+# grid.add_legend()
+# plt.tight_layout()
+# plt.show()
+
+# Fill in missing ages
+guess_ages = np.zeros((2,3)) # Matrix to fill
+for dataset in combine: # Perform this action for both the testing and training datasets
+    for i in range(0, 2): # Loop through sexes
+        for j in range(0, 3): # Loop through passenger classes
+            # Ignoring empty entries, obtain a list of ages for the specified sex and passenger class
+            guess_df = dataset[(dataset['Male'] == i) & \
+                                  (dataset['Pclass'] == j+1)]['Age'].dropna()
+
+            # Guess the median age for the specific sex and passenger class
+            age_guess = guess_df.median()
+
+            # Convert random age float to nearest .5 age
+            guess_ages[i,j] = int( age_guess/0.5 + 0.5 ) * 0.5
+            
+    for i in range(0, 2): # Loop through sexes
+        for j in range(0, 3): # Loop through passenger classes
+            # Fill in missing ages based on the passenger's sex and class
+            dataset.loc[ (dataset.Age.isnull()) & (dataset.Male == i) & (dataset.Pclass == j+1),\
+                    'Age'] = guess_ages[i,j]
+
+    # Make sure all entries in Age are now integers
+    dataset['Age'] = dataset['Age'].astype(int)
+
+print(train_df.head())
+
+
+# Method 2 based on:
+# https://www.kaggle.com/madhumuppavarapu/titanic-train-dataset
+
+# sns.boxplot(x='SibSp',y='Age',data=train_df)
+# plt.tight_layout()
+# plt.show()
+
+
+# Create Heatmap to Check Again for Entries Missing Data
+# (uncomment the below lines to obtain the plot)
+# sns.heatmap(train_df.isnull())
+# plt.tight_layout()
+# plt.show()
+
+# Plot should show no missing entries, indicating the data is ready for use with ML
+
+
+
+
+## Correlations
 
 # Create Matrix of Correlations
-correlation_mat = train_df_s.corr()
+correlation_mat = train_df.corr()
 
 # Create Heatmap of Correlations
 sns.heatmap(correlation_mat, annot = True)
