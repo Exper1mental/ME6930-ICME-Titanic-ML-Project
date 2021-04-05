@@ -1,13 +1,18 @@
 ########################################################################
 ##### About
 
-# Authors: Anish Chaluvadi amd Thomas Delvaux
+# Authors: Anish Chaluvadi and Thomas Delvaux
 # ME-6930 036
 # 04/06/2021
 
 # For data obtained from:
 # https://www.kaggle.com/c/titanic/data
 
+show_figures = 1 # all figures are displayed in the code
+# 0 ~ false; 1 ~ true
+
+print_extra_info = 1 # prints extra intermediary information
+# as the script runs.
 
 ########################################################################
 ##### Thomas's Data Cleaning and Correlations
@@ -54,10 +59,11 @@ combine = [combined_df] #[train_df, test_df] # Useful for filling in empty entri
 
 # Create Heatmap of Entries Missing Data
 # (uncomment the below lines to obtain the plot)
-#sns.heatmap(combined_df.isnull())
-#plt.tight_layout()
-#plt.show()
-
+if show_figures == 1:
+    sns.heatmap(combined_df.isnull())
+    plt.title('Heatmap of Uncleaned Data (Empty Entries in White)')
+    plt.tight_layout()
+    plt.show()
 
 ### Data Cleanup
 
@@ -82,11 +88,12 @@ for dataset in combine: # Perform this action for both the testing and training 
 
 # Plot relationship between gender, age, and pclass
 # (uncomment the below lines to obtain the plot)
-#grid = sns.FacetGrid(combined_df, row='Pclass', col='Male', height=2.2, aspect=1.6)
-#grid.map(plt.hist, 'Age', alpha=.5, bins=20)
-#grid.add_legend()
-#plt.tight_layout()
-#plt.show()
+if show_figures == 1:
+    grid = sns.FacetGrid(combined_df, row='Pclass', col='Male', height=2.2, aspect=1.6)
+    grid.map(plt.hist, 'Age', alpha=.5, bins=20)
+    grid.add_legend()
+    plt.tight_layout()
+    plt.show()
 
 # Fill in missing ages
 guess_ages = np.zeros((2,3)) # Matrix to fill
@@ -143,9 +150,16 @@ combined_df = pd.get_dummies(combined_df)
 
 # Create Heatmap to Check Again for Entries Missing Data
 # (uncomment the below lines to obtain the plot)
-#sns.heatmap(combined_df.isnull())
-#plt.tight_layout()
-#plt.show()
+if show_figures == 1:
+    sns.heatmap(combined_df.isnull())
+    plt.tight_layout()
+    plt.show()
+    # The heatmap should be a big red/pink square,
+    # which indicates that no empty entries are present
+    #
+    # If it is deep purple / navy blue, there are empty
+    # entries that somehow were missed. This should not
+    # happen.
 
 # Plot should show no missing entries, indicating the data is ready for use with ML
 
@@ -159,12 +173,13 @@ combined_df = pd.get_dummies(combined_df)
 correlation_mat = combined_df.corr()
 
 # Create Heatmap of Correlations
-sns.heatmap(correlation_mat, annot = True)
-plt.title("Correlation matrix of Titanic roster data")
-plt.xlabel("passenger features")
-plt.ylabel("passenger features")
-plt.tight_layout()
-plt.show()
+if show_figures == 1:
+    sns.heatmap(correlation_mat, annot = True)
+    plt.title("Correlation matrix of Titanic roster data")
+    plt.xlabel("passenger features")
+    plt.ylabel("passenger features")
+    plt.tight_layout()
+    plt.show()
 
 
 ########################################################################
