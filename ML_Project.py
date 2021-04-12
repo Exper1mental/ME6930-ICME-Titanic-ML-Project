@@ -8,7 +8,7 @@
 # For data obtained from:
 # https://www.kaggle.com/c/titanic/data
 
-show_figures = 1 # all figures are displayed in the code
+show_figures = 0 # all figures are displayed in the code
 # 0 ~ false; 1 ~ true
 
 print_extra_info = 1 # prints extra intermediary information
@@ -55,7 +55,8 @@ combine = [combined_df] #[train_df, test_df] # Useful for filling in empty entri
 #print(df.shape)
 
 # Checking for missing data
-#print(combined_df.isnull().sum())
+print('Empty entries before filling in age data:')
+print(combined_df.isnull().sum())
 
 # Create Heatmap of Entries Missing Data
 # (uncomment the below lines to obtain the plot)
@@ -123,7 +124,8 @@ for dataset in combine: # Perform this action for both the testing and training 
 #print(combined_df.head())
 
 # Checking for missing data
-#print(combined_df.isnull().sum())
+print('Empty entries after filling in age data:')
+print(combined_df.isnull().sum())
 #print(combined_df.isnull())
 
 # Based on: https://stackoverflow.com/questions/51374068/how-to-remove-a-row-which-has-empty-column-in-a-dataframe-using-pandas
@@ -132,6 +134,20 @@ combined_df = combined_df.dropna()
 
 # Confirm there are no more entries missing data
 #print(combined_df.isnull().sum())
+
+
+# Create Heatmap to Check Again for Entries Missing Data
+# (uncomment the below lines to obtain the plot)
+if show_figures == 1:
+    sns.heatmap(combined_df.isnull())
+    plt.tight_layout()
+    plt.show()
+    # The heatmap should be a big red/pink square,
+    # which indicates that no empty entries are present
+    #
+    # If it is deep purple / navy blue, there are empty
+    # entries that somehow were missed. This should not
+    # happen.
 
 
 ## Split Embarked data into three boolean columns
@@ -190,7 +206,8 @@ from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import StandardScaler
 
 # ML Algorithm 1: Decision Trees
-from sklearn.tree import DecisionTreeClassifier
+from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier # Older line of code, left for compatibility
 #data = pd.read_csv('../input/classification-suv-dataset/Social_Network_Ads.csv')
 dt = combined_df.copy()
 #dt.head()
@@ -207,12 +224,34 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, rand
 sc_X = StandardScaler()
 X_train = sc_X.fit_transform(X_train)
 X_test = sc_X.transform(X_test)
-classifier=DecisionTreeClassifier(criterion="entropy",random_state=0)
+classifier=tree.DecisionTreeClassifier(criterion="entropy", min_samples_split=10, max_depth=5, random_state=0)
 classifier.fit(X_train,y_train)
 y_pred=classifier.predict(X_test)
 acc=accuracy_score(y_test, y_pred)
 print(f'Decision Trees Accuracy: {round(acc*100,3)}%')
 
+# Documentation on decision trees:
+# https://scikit-learn.org/stable/modules/tree.html#tree
+
+
+# Generate decision tree visualization PDF
+# Requires graphviz (both the executable file and python library)
+# May need to restart computer before use
+
+#print(classifier.classes_.astype(str))
+#print(['Died', 'Survived'])
+import graphviz 
+dot_data = tree.export_graphviz(classifier, out_file=None,
+                      feature_names=X.columns,  
+                      # Use 'Died' for '0' and 'Survived' for '1' in class name
+                      class_names=['Died', 'Survived'], #classifier.classes_.astype(str),
+                      filled=True, rounded=True,  
+                      special_characters=True) 
+graph = graphviz.Source(dot_data)
+graph.render("titanic_decision-tree")
+
+
+#print(y_train.astype(str).loc[:])
 
 # ML Algorithm 2: Random Forest
 from sklearn.ensemble import RandomForestClassifier
