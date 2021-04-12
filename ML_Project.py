@@ -14,10 +14,8 @@ show_figures = 0 # all figures are displayed in the code
 # WARNING: Requires graphviz (both the executable file and python library)
 # on Windows the executables MUST be added to PATH
 # You may need to restart computer after installation before use (namely if using Windows)
-run_graphviz = 0 # runs graphviz code to create PDF visualizations
+run_graphviz = 1 # runs graphviz code to create PDF visualizations
 # for the Decision Tree model
-
-
 
 print_extra_info = 0 # prints extra intermediary information
 # as the script runs.
@@ -225,14 +223,14 @@ dt = combined_df.copy()
 
 # Column "Embarked" must also be dropped because it contained non-float data, which
 # is incompatible with the Decision Trees algorithm
-X = dt.drop(['Survived','Embarked_S','Embarked_C','Embarked_Q'], axis=1)
+X = dt.drop(['Survived'], axis=1)
 #X = dt.drop(['Survived','Embarked'], axis=1) #dt.iloc[:, [2,3]].values
 y = dt['Survived'] #dt.iloc[:, 4].values
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state = 0)
 sc_X = StandardScaler()
 X_train = sc_X.fit_transform(X_train)
 X_test = sc_X.transform(X_test)
-classifier=tree.DecisionTreeClassifier(criterion="entropy", min_samples_split=10, max_depth=5, random_state=0)
+classifier=tree.DecisionTreeClassifier(criterion="entropy", min_samples_split=100, max_depth=1, random_state=0)
 classifier.fit(X_train,y_train)
 y_pred=classifier.predict(X_test)
 acc=accuracy_score(y_test, y_pred)
@@ -253,15 +251,17 @@ print(f'Decision Trees Accuracy: {round(acc*100,3)}%')
 
 # Documentation on exporting to graphviz:
 # https://scikit-learn.org/stable/modules/generated/sklearn.tree.export_graphviz.html
-import graphviz 
-dot_data = tree.export_graphviz(classifier, out_file=None,
-                      feature_names=X.columns,  
-                      # Use 'Died' for '0' and 'Survived' for '1' in class name
-                      class_names=['Died', 'Survived'], #classifier.classes_.astype(str),
-                      filled=True, rounded=True,  
-                      special_characters=True) 
-graph = graphviz.Source(dot_data)
-graph.render("titanic_decision-tree")
+if run_graphviz == 1:
+    import graphviz 
+    dot_data = tree.export_graphviz(classifier, out_file=None,
+                        feature_names=X.columns,  
+                        # Use 'Died' for '0' and 'Survived' for '1' in class name
+                        class_names=['Died', 'Survived'], #classifier.classes_.astype(str),
+                        filled=True, rounded=True,  
+                        special_characters=True,
+                        proportion=True) 
+    graph = graphviz.Source(dot_data)
+    graph.render("titanic_decision-tree")
 
 
 #print(y_train.astype(str).loc[:])
@@ -276,7 +276,7 @@ X = rf.drop('Survived', axis=1)
 y = rf['Survived']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state = 0)
-model = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=0)
+model = RandomForestClassifier(n_estimators=100, min_samples_split=10, max_depth=10, random_state=0)
 model.fit(X_train, y_train)
 acc = model.score(X_test, y_test)
 print(f'Random Forest Accuracy: {round(acc*100,3)}%')
