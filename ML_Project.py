@@ -3,7 +3,7 @@
 
 # Authors: Anish Chaluvadi and Thomas Delvaux
 # ME-6930 036
-# 04/06/2021
+# 04/19/2021
 
 # For data obtained from:
 # https://www.kaggle.com/c/titanic/data
@@ -11,7 +11,15 @@
 show_figures = 0 # all figures are displayed in the code
 # 0 ~ false; 1 ~ true
 
-print_extra_info = 1 # prints extra intermediary information
+# WARNING: Requires graphviz (both the executable file and python library)
+# on Windows the executables MUST be added to PATH
+# You may need to restart computer after installation before use (namely if using Windows)
+run_graphviz = 0 # runs graphviz code to create PDF visualizations
+# for the Decision Tree model
+
+
+
+print_extra_info = 0 # prints extra intermediary information
 # as the script runs.
 
 ########################################################################
@@ -235,11 +243,16 @@ print(f'Decision Trees Accuracy: {round(acc*100,3)}%')
 
 
 # Generate decision tree visualization PDF
-# Requires graphviz (both the executable file and python library)
-# May need to restart computer before use
+# WARNING: Requires graphviz (both the executable file and python library)
+# You may need to restart computer after installation before use
 
+# Helpful for getting class names from model:
+# https://stackoverflow.com/questions/39476020/get-feature-and-class-names-into-decision-tree-using-export-graphviz
 #print(classifier.classes_.astype(str))
 #print(['Died', 'Survived'])
+
+# Documentation on exporting to graphviz:
+# https://scikit-learn.org/stable/modules/generated/sklearn.tree.export_graphviz.html
 import graphviz 
 dot_data = tree.export_graphviz(classifier, out_file=None,
                       feature_names=X.columns,  
