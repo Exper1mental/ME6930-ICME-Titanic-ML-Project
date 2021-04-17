@@ -125,8 +125,11 @@ for dataset in combine: # Perform this action for both the testing and training 
 combined_df = combined_df.dropna()
 
 ## Making embarkation data usable
+
+ports = {"S": 0, "C": 1, "Q": 2}
+
 for dataset in combine:
-    dataset['Embarked'] = dataset['Embarked'].map( {'S': 0, 'C': 1, 'Q': 2} ).astype(int)
+    dataset['Embarked'] = dataset['Embarked'].map(ports)
 
 # Confirm there are no more entries missing data
 #print(combined_df.isnull().sum())
@@ -134,19 +137,21 @@ for dataset in combine:
 ### Feature Engineering
 
 ## Title
-for dataset in combine: # Perform this action for both the testing and training datasets
-    dataset['Title'] = dataset['Title'].replace(['Lady', 'Countess','Capt', 'Col',\
- 	'Don', 'Dr', 'Major', 'Rev', 'Sir', 'Jonkheer', 'Dona'], 'Rare') # These are rare titles which may indicate a different relevance than other titles
+   
+titles = {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5} # Define what titles are
 
+for dataset in combine: # Perform this action for both the testing and training datasets
+    dataset['Title'] = dataset.Name.str.extract(' ([A-Za-z]+)\.', expand=False) # Extract titles from names
+    dataset['Title'] = dataset['Title'].replace(['Lady', 'Countess','Capt', 'Col','Don', 'Dr',\
+                                            'Major', 'Rev', 'Sir', 'Jonkheer', 'Dona'], 'Rare') # These are rare titles which may indicate a different relevance than other titles
     dataset['Title'] = dataset['Title'].replace('Mlle', 'Miss')
     dataset['Title'] = dataset['Title'].replace('Ms', 'Miss')
     dataset['Title'] = dataset['Title'].replace('Mme', 'Mrs')
-
-title_mapping = {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5} # Ensure it is numerical for ML purposes
-for dataset in combine:
-    dataset['Title'] = dataset['Title'].map(title_mapping)
+    dataset['Title'] = dataset['Title'].map(titles)  # Convert titles into numbers for ML purposes
     dataset['Title'] = dataset['Title'].fillna(0)
-    
+
+combine = combine.drop(['Name'], axis=1)
+
 ## Family Size
 for dataset in combine: # Perform this action for both the testing and training datasets
     dataset['FamilySize'] = dataset['SibSp'] + dataset['Parch'] + 1 # Creates a separate single variable for family size
@@ -246,7 +251,7 @@ from sklearn.preprocessing import StandardScaler
 # ML Algorithm 3: Linear Regression
 from sklearn.linear_model import LogisticRegression
 
-lr = combined_df.copy
+lr = combined_df.copy()
 X_train_lr = lr.drop('Survived', axis=1)
 Y_train_lr = lr['Survived']
 
@@ -264,7 +269,7 @@ coeff_df.sort_values(by='Correlation', ascending=False)
 # ML Algorithm 4: k-Nearest Neighbors (KNN)
 from sklearn.neighbors import KNeighborsClassifier
 
-knndf = combined_df.copy
+knndf = combined_df.copy()
 X_train_knn = knndf.drop('Survived', axis=1)
 Y_train_knn = knndf['Survived']
 
