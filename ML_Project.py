@@ -29,14 +29,15 @@ import pandas as pd # Data processing
 import os # File locating
 import seaborn as sns # Constructing graphs
 import matplotlib.pyplot as plt # Plotting results
+import random as rnd # Random number generator
 
 
-### Importing Data
+### Thomas's Importing Data
 
 #train_data = r'D:\Users\Exper1mental\Clemson Classes\ME 6930\Project\titanic_train.csv'
-train_csv = r'data\train.csv' # Dataset to train machine learning (ML) algorithms
-test_csv = r'data\test.csv' # Dataset to test ML algorithms
-answer_csv = r'data\gender_submission.csv' # Answerkey dataset
+# train_csv = r'data\train.csv' # Dataset to train machine learning (ML) algorithms
+# test_csv = r'data\test.csv' # Dataset to test ML algorithms
+# answer_csv = r'data\gender_submission.csv' # Answerkey dataset
 combined_csv = r'data\test_train_combined.csv' # Dataset with merging solutions and training data into
 # one big dataset
 
@@ -51,9 +52,9 @@ combined_csv = r'data\test_train_combined.csv' # Dataset with merging solutions 
 
 
 # Create Pandas Data Frames
-train_df = pd.read_csv(train_csv, index_col=0)
-test_df = pd.read_csv(test_csv, index_col=0)
-answer_df = pd.read_csv(answer_csv, index_col=0)
+# train_df = pd.read_csv(train_csv, index_col=0)
+# test_df = pd.read_csv(test_csv, index_col=0)
+# answer_df = pd.read_csv(answer_csv, index_col=0)
 combined_df = pd.read_csv(combined_csv, index_col=0)
 
 combine = [combined_df] #[train_df, test_df] # Useful for filling in empty entries
@@ -61,8 +62,9 @@ combine = [combined_df] #[train_df, test_df] # Useful for filling in empty entri
 #print(df.shape)
 
 # Checking for missing data
-print('Empty entries before filling in age data:')
-print(combined_df.isnull().sum())
+if print_extra_info == 1:
+    print('Empty entries before filling in age data:')
+    print(combined_df.isnull().sum())
 
 # Create Heatmap of Entries Missing Data
 # (uncomment the below lines to obtain the plot)
@@ -72,11 +74,11 @@ if show_figures == 1:
     plt.tight_layout()
     plt.show()
 
-### Data Cleanup
+### Thomas's Data Cleanup
 
 for dataset in combine: # Perform this action for both the testing and training datasets
     #  Removing unused columns
-    dataset.drop(['Name','Ticket','Cabin'],inplace=True,axis=1)
+    dataset.drop(['Ticket','Cabin'],inplace=True,axis=1)
 
 
     ## Making sex data usable
@@ -130,17 +132,40 @@ for dataset in combine: # Perform this action for both the testing and training 
 #print(combined_df.head())
 
 # Checking for missing data
-print('Empty entries after filling in age data:')
-print(combined_df.isnull().sum())
+#print('Empty entries after filling in age data:')
+#print(combined_df.isnull().sum())
 #print(combined_df.isnull())
 
-# Based on: https://stackoverflow.com/questions/51374068/how-to-remove-a-row-which-has-empty-column-in-a-dataframe-using-pandas
-# Removed any rows missing data. Should only remove 2 rows missing embarked data.
-combined_df = combined_df.dropna()
 
-# Confirm there are no more entries missing data
-#print(combined_df.isnull().sum())
+### Anish's Feature Engineering
 
+## Title
+   
+titles = {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5} # Define what titles are
+
+for dataset in combine: # Perform this action for both the testing and training datasets
+    dataset['Title'] = dataset.Name.str.extract(' ([A-Za-z]+)\.', expand=False) # Extract titles from names
+    dataset['Title'] = dataset['Title'].replace(['Lady', 'Countess','Capt', 'Col','Don', 'Dr',\
+                                            'Major', 'Rev', 'Sir', 'Jonkheer', 'Dona'], 'Rare') # These are rare titles which may indicate a different relevance than other titles
+    dataset['Title'] = dataset['Title'].replace('Mlle', 'Miss')
+    dataset['Title'] = dataset['Title'].replace('Ms', 'Miss')
+    dataset['Title'] = dataset['Title'].replace('Mme', 'Mrs')
+    dataset['Title'] = dataset['Title'].map(titles)  # Convert titles into numbers for ML purposes
+    dataset['Title'] = dataset['Title'].fillna(0)
+
+combined_df = combined_df.drop(['Name'], axis=1)
+
+
+## Family Size
+
+for dataset in combine: # Perform this action for both the testing and training datasets
+    dataset['FamilySize'] = dataset['SibSp'] + dataset['Parch'] + 1 # Creates a separate single variable for family size
+
+    ## Split Embarked data into three boolean columns
+    #dataset = pd.get_dummies(dataset)
+
+
+## Thomas's Remove missing data
 
 # Create Heatmap to Check Again for Entries Missing Data
 # (uncomment the below lines to obtain the plot)
@@ -155,8 +180,29 @@ if show_figures == 1:
     # entries that somehow were missed. This should not
     # happen.
 
+# Checking for missing data
+if print_extra_info == 1:
+    print('\nEmpty entries before removing missing data:')
+    print(combined_df.isnull().sum())
 
-## Split Embarked data into three boolean columns
+# Remove missing dats
+# Based on: https://stackoverflow.com/questions/51374068/how-to-remove-a-row-which-has-empty-column-in-a-dataframe-using-pandas
+# Removed any rows missing data. Should only remove 2 rows missing embarked data.
+combined_df = combined_df.dropna()
+
+# Confirm there are no more entries missing data
+#print(combined_df.isnull().sum())
+
+
+## Making embarkation data usable
+# Emptry entries had to be removed before this can be done.
+
+# OPTION 1: Change strings to integers
+
+#ports = {"S": 0, "C": 1, "Q": 2}
+#combined_df['Embarked'] = combined_df['Embarked'].map(ports)
+
+# OPTION 2: Split Embarked data into three boolean columns
 
 combined_df = pd.get_dummies(combined_df)
 # Split the string-based embarked data into three columns with boolean 
@@ -168,6 +214,11 @@ combined_df = pd.get_dummies(combined_df)
 
 # Preview New Data Format
 #print(combined_df.head())
+
+# Checking for missing data
+if print_extra_info == 1:
+    print('\nEmpty entries after removing missing data:')
+    print(combined_df.isnull().sum())
 
 
 # Create Heatmap to Check Again for Entries Missing Data
@@ -186,13 +237,20 @@ if show_figures == 1:
 # Plot should show no missing entries, indicating the data is ready for use with ML
 
 
-### Correlations
+### Thomas's Correlations
 
 # Correlation code based on:
 # https://likegeeks.com/python-correlation-matrix/
 
-# Create Matrix of Correlations
-correlation_mat = combined_df.corr()
+# Create Matrix of Correlations for Training Dataset
+from sklearn.model_selection import train_test_split
+corr = combined_df.copy()
+X = corr.copy()
+#X = dt.drop(['Survived','Embarked'], axis=1) #dt.iloc[:, [2,3]].values
+y = corr['Survived'] #dt.iloc[:, 4].values
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state = 0)
+correlation_mat = X_train.corr()
+#correlation_mat = combined_df.corr()
 
 # Create Heatmap of Correlations
 if show_figures == 1:
@@ -203,10 +261,10 @@ if show_figures == 1:
     plt.tight_layout()
     plt.show()
 
-
 ########################################################################
 ##### Thomas's ML Algorithms
 # Based on: https://www.kaggle.com/vanshjatana/applied-machine-learning
+print('\nThomas\'s ML Algorithm Results:')
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import StandardScaler
@@ -233,8 +291,8 @@ X_test = sc_X.transform(X_test)
 classifier=tree.DecisionTreeClassifier(criterion="entropy", min_samples_split=100, max_depth=1, random_state=0)
 classifier.fit(X_train,y_train)
 y_pred=classifier.predict(X_test)
-acc=accuracy_score(y_test, y_pred)
-print(f'Decision Trees Accuracy: {round(acc*100,3)}%')
+acc_dt=accuracy_score(y_test, y_pred)
+print(f'Decision Trees Accuracy: {round(acc_dt*100,3)}%')
 
 # Documentation on decision trees:
 # https://scikit-learn.org/stable/modules/tree.html#tree
@@ -272,11 +330,66 @@ from sklearn.ensemble import RandomForestClassifier
 rf = combined_df.copy()
 #rf.head()
 
-X = rf.drop('Survived', axis=1)
+X = rf.drop(['Survived'], axis=1)
 y = rf['Survived']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state = 0)
-model = RandomForestClassifier(n_estimators=100, min_samples_split=10, max_depth=10, random_state=0)
+model = RandomForestClassifier(n_estimators=100, min_samples_split=100, max_depth=6, random_state=0)
 model.fit(X_train, y_train)
-acc = model.score(X_test, y_test)
-print(f'Random Forest Accuracy: {round(acc*100,3)}%')
+acc_rf = model.score(X_test, y_test)
+print(f'Random Forest Accuracy: {round(acc_rf*100,3)}%')
+
+
+
+########################################################################
+##### Anish's ML Algorithms
+print('\nAnish\'s ML Algorithm Results:')
+# Based on: https://www.kaggle.com/vinothan/titanic-model-with-90-accuracy; https://www.kaggle.com/startupsci/titanic-data-science-solutions#Titanic-Data-Science-Solutions
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import StandardScaler
+
+
+# ML Algorithm 3: Linear Regression
+from sklearn.linear_model import LogisticRegression
+
+lr_df = combined_df.copy()
+X_train_lr = lr_df.drop(['Survived'], axis=1)
+Y_train_lr = lr_df['Survived']
+
+logreg = LogisticRegression(solver='lbfgs', max_iter=400)
+logreg.fit(X_train_lr, Y_train_lr)
+Y_pred_lr = logreg.predict(X_test)
+acc_log = logreg.score(X_train_lr, Y_train_lr)
+print(f'Logistic Regression Accuracy: {round(acc_log*100,3)}%')
+
+# Feature
+coeff_df = pd.DataFrame(combined_df.columns.delete(0)) # Details correlations between features for better understanding (I think we should try to do this for all of our models)
+coeff_df.columns = ['Feature']
+coeff_df["Correlation"] = pd.Series(logreg.coef_[0])
+coeff_df.sort_values(by='Correlation', ascending=False)
+#print(coeff_df)
+
+
+# ML Algorithm 4: k-Nearest Neighbors (KNN)
+from sklearn.neighbors import KNeighborsClassifier
+
+knn_df = combined_df.copy()
+X_train_knn = knn_df.drop(['Survived'], axis=1)
+Y_train_knn = knn_df['Survived']
+
+knn = KNeighborsClassifier(n_neighbors = 3)
+knn.fit(X_train_knn, Y_train_knn)
+Y_pred_knn = knn.predict(X_test)
+acc_knn = knn.score(X_train_knn, Y_train_knn)
+print(f'k-Nearest Neighbors Accuracy: {round(acc_knn*100,3)}%')
+
+### Post-processing
+
+# Model Evaluation
+print('\n')
+models = pd.DataFrame({
+    'Model': ['Decision Trees', 'Random Forest', 'Logistic Regression', 'k-Nearest Neighbors'],
+    'Score': [acc_dt, acc_rf, acc_log, acc_knn]})
+models.sort_values(by='Score', ascending=False)
+print(models)
