@@ -33,28 +33,11 @@ import random as rnd # Random number generator
 
 
 ### Thomas's Importing Data
-
-#train_data = r'D:\Users\Exper1mental\Clemson Classes\ME 6930\Project\titanic_train.csv'
-# train_csv = r'data\train.csv' # Dataset to train machine learning (ML) algorithms
-# test_csv = r'data\test.csv' # Dataset to test ML algorithms
-# answer_csv = r'data\gender_submission.csv' # Answerkey dataset
 combined_csv = r'data\test_train_combined.csv' # Dataset with merging solutions and training data into
 # one big dataset
 
-# Based on: https://stackoverflow.com/questions/35384358/how-to-open-my-files-in-data-folder-with-pandas-using-relative-path
-# Find directory this python script is located in
-#current_file = os.path.abspath(os.path.dirname(__file__))
-
-# Full data filepaths
-#train_path = os.path.join(current_file, train_csv)
-#test_path = os.path.join(current_file, test_csv)
-#answer_path = os.path.join(current_file, answer_csv)
-
 
 # Create Pandas Data Frames
-# train_df = pd.read_csv(train_csv, index_col=0)
-# test_df = pd.read_csv(test_csv, index_col=0)
-# answer_df = pd.read_csv(answer_csv, index_col=0)
 combined_df = pd.read_csv(combined_csv, index_col=0)
 
 combine = [combined_df] #[train_df, test_df] # Useful for filling in empty entries
@@ -283,7 +266,6 @@ dt = combined_df.copy()
 # Column "Embarked" must also be dropped because it contained non-float data, which
 # is incompatible with the Decision Trees algorithm
 X = dt.drop(['Survived'], axis=1)
-#X = dt.drop(['Survived','Embarked'], axis=1) #dt.iloc[:, [2,3]].values
 y = dt['Survived'] #dt.iloc[:, 4].values
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state = 0)
 sc_X = StandardScaler()
@@ -334,7 +316,6 @@ if run_graphviz == 1:
 
 # ML Algorithm 2: Random Forest
 from sklearn.ensemble import RandomForestClassifier
-#rf = pd.read_csv("../input/mushroom-classification/mushrooms.csv")
 rf = combined_df.copy()
 #rf.head()
 
@@ -381,7 +362,7 @@ plt.title('Logistical Regression Confusion Matrix', y=1.05, size=15)
 plt.savefig('Confusion_Matrix_lr.png')
 
 
-# # Feature
+# Another way to view feature correlations (uncomment to see in terminal output)
 # coeff_df = pd.DataFrame(combined_df.columns.delete(0)) # Details correlations between features for better understanding (I think we should try to do this for all of our models)
 # coeff_df.columns = ['Feature']
 # coeff_df["Correlation"] = pd.Series(logreg.coef_[0])
