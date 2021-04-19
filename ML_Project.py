@@ -14,7 +14,7 @@ show_figures = 0 # all figures are displayed in the code
 # WARNING: Requires graphviz (both the executable file and python library)
 # on Windows the executables MUST be added to PATH
 # You may need to restart computer after installation before use (namely if using Windows)
-run_graphviz = 1 # runs graphviz code to create PDF visualizations
+run_graphviz = 0 # runs graphviz code to create PDF visualizations
 # for the Decision Tree model
 
 print_extra_info = 0 # prints extra intermediary information
@@ -51,11 +51,13 @@ if print_extra_info == 1:
 
 # Create Heatmap of Entries Missing Data
 # (uncomment the below lines to obtain the plot)
+sns.heatmap(combined_df.isnull())
+plt.title('Heatmap of Uncleaned Data (Empty Entries in White)')
+plt.tight_layout()
+plt.savefig('MissingDataCheck_Uncleaned.png')
 if show_figures == 1:
-    sns.heatmap(combined_df.isnull())
-    plt.title('Heatmap of Uncleaned Data (Empty Entries in White)')
-    plt.tight_layout()
     plt.show()
+plt.close()
 
 ### Thomas's Data Cleanup
 
@@ -80,12 +82,14 @@ for dataset in combine: # Perform this action for both the testing and training 
 
 # Plot relationship between gender, age, and pclass
 # (uncomment the below lines to obtain the plot)
+grid = sns.FacetGrid(combined_df, row='Pclass', col='Male', height=2.2, aspect=1.6)
+grid.map(plt.hist, 'Age', alpha=.5, bins=20)
+grid.add_legend()
+plt.tight_layout()
+plt.savefig('AgeDistribution.png')
 if show_figures == 1:
-    grid = sns.FacetGrid(combined_df, row='Pclass', col='Male', height=2.2, aspect=1.6)
-    grid.map(plt.hist, 'Age', alpha=.5, bins=20)
-    grid.add_legend()
-    plt.tight_layout()
     plt.show()
+plt.close()
 
 # Fill in missing ages
 guess_ages = np.zeros((2,3)) # Matrix to fill
@@ -153,10 +157,12 @@ combined_df['FamilySize'] = combined_df['SibSp'] + combined_df['Parch'] + 1 # Cr
 
 # Create Heatmap to Check Again for Entries Missing Data
 # (uncomment the below lines to obtain the plot)
+sns.heatmap(combined_df.isnull())
+plt.tight_layout()
+plt.savefig('MissingDataCheck_PartiallyCleaned.png')
 if show_figures == 1:
-    sns.heatmap(combined_df.isnull())
-    plt.tight_layout()
     plt.show()
+plt.close()
     # The heatmap should be a big red/pink square,
     # which indicates that no empty entries are present
     #
@@ -207,10 +213,15 @@ if print_extra_info == 1:
 
 # Create Heatmap to Check Again for Entries Missing Data
 # (uncomment the below lines to obtain the plot)
+sns.heatmap(combined_df.isnull())
+plt.tight_layout()
+plt.savefig('MissingDataCheck_Cleaned.png')
 if show_figures == 1:
-    sns.heatmap(combined_df.isnull())
-    plt.tight_layout()
     plt.show()
+plt.close()
+
+
+    
     # The heatmap should be a big red/pink square,
     # which indicates that no empty entries are present
     #
@@ -237,13 +248,16 @@ correlation_mat = X_train.corr()
 #correlation_mat = combined_df.corr()
 
 # Create Heatmap of Correlations
+
+sns.heatmap(correlation_mat, annot = True)
+plt.title("Correlation matrix of Titanic roster data")
+plt.xlabel("passenger features")
+plt.ylabel("passenger features")
+plt.tight_layout()
+plt.savefig('Correlations.png')
 if show_figures == 1:
-    sns.heatmap(correlation_mat, annot = True)
-    plt.title("Correlation matrix of Titanic roster data")
-    plt.xlabel("passenger features")
-    plt.ylabel("passenger features")
-    plt.tight_layout()
     plt.show()
+plt.close()
 
 ########################################################################
 ##### Thomas's ML Algorithms
@@ -281,7 +295,9 @@ sns.heatmap(confusion_matrix(y_test,y_pred_dt),annot=True,fmt='3.0f',cmap="Blues
 plt.title('Decision Trees Matrix', y=1.05, size=15)
 plt.savefig('Confusion_Matrix_dt.png')
 plt.tight_layout()
-plt.show()
+if show_figures==1:
+    plt.show()
+plt.close()
 
 
 # Documentation on decision trees:
@@ -331,9 +347,10 @@ print(f'Random Forest Accuracy: {round(acc_rf*100,3)}%')
 
 sns.heatmap(confusion_matrix(y_test,Y_pred_rf),annot=True,fmt='3.0f',cmap="Blues")
 plt.title('Random Forest Confusion Matrix', y=1.05, size=15)
-plt.savefig('Confusion_Matrix_rf.png')
 plt.tight_layout()
-plt.show()
+plt.savefig('Confusion_Matrix_rf.png')
+if show_figures==1:
+    plt.show()
 plt.close()
 
 
@@ -359,7 +376,11 @@ print(f'Logistic Regression Accuracy: {round(acc_log*100,3)}%')
 
 sns.heatmap(confusion_matrix(y_test,Y_pred_lr),annot=True,fmt='3.0f',cmap="Blues")
 plt.title('Logistical Regression Confusion Matrix', y=1.05, size=15)
+plt.tight_layout()
 plt.savefig('Confusion_Matrix_lr.png')
+if show_figures==1:
+    plt.show()
+plt.close()
 
 
 # Another way to view feature correlations (uncomment to see in terminal output)
@@ -385,9 +406,11 @@ print(f'k-Nearest Neighbors Accuracy: {round(acc_knn*100,3)}%')
 
 sns.heatmap(confusion_matrix(y_test,Y_pred_knn),annot=True,fmt='3.0f',cmap="Blues")
 plt.title('k-Nearest Neighbors Confusion Matrix', y=1.05, size=15)
-plt.savefig('Confusion_Matrix_knn.png')
 plt.tight_layout()
-plt.show()
+plt.savefig('Confusion_Matrix_knn.png')
+if show_figures==1:
+    plt.show()
+plt.close()
 
 
 ### Post-processing
