@@ -158,8 +158,9 @@ combined_df = combined_df.drop(['Name'], axis=1)
 
 ## Family Size
 
-for dataset in combine: # Perform this action for both the testing and training datasets
-    dataset['FamilySize'] = dataset['SibSp'] + dataset['Parch'] + 1 # Creates a separate single variable for family size
+#for dataset in combine: # Perform this action for both the testing and training datasets
+combined_df['FamilySize'] = combined_df['SibSp'] + combined_df['Parch'] + 1 # Creates a separate single variable for family size
+#dataset['FamilySize'] = dataset['SibSp'] + dataset['Parch'] + 1 # Creates a separate single variable for family size
 
     ## Split Embarked data into three boolean columns
     #dataset = pd.get_dummies(dataset)
@@ -266,7 +267,7 @@ if show_figures == 1:
 # Based on: https://www.kaggle.com/vanshjatana/applied-machine-learning
 print('\nThomas\'s ML Algorithm Results:')
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.preprocessing import StandardScaler
 
 # ML Algorithm 1: Decision Trees
@@ -290,9 +291,16 @@ X_train = sc_X.fit_transform(X_train)
 X_test = sc_X.transform(X_test)
 classifier=tree.DecisionTreeClassifier(criterion="entropy", min_samples_split=100, max_depth=1, random_state=0)
 classifier.fit(X_train,y_train)
-y_pred=classifier.predict(X_test)
-acc_dt=accuracy_score(y_test, y_pred)
+y_pred_dt=classifier.predict(X_test)
+acc_dt=accuracy_score(y_test, y_pred_dt)
 print(f'Decision Trees Accuracy: {round(acc_dt*100,3)}%')
+
+sns.heatmap(confusion_matrix(y_test,y_pred_dt),annot=True,fmt='3.0f',cmap="Blues")
+plt.title('Decision Trees Matrix', y=1.05, size=15)
+plt.savefig('Confusion_Matrix_dt.png')
+plt.tight_layout()
+plt.show()
+
 
 # Documentation on decision trees:
 # https://scikit-learn.org/stable/modules/tree.html#tree
@@ -336,8 +344,17 @@ y = rf['Survived']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state = 0)
 model = RandomForestClassifier(n_estimators=100, min_samples_split=100, max_depth=6, random_state=0)
 model.fit(X_train, y_train)
+Y_pred_rf = model.predict(X_test)
 acc_rf = model.score(X_test, y_test)
 print(f'Random Forest Accuracy: {round(acc_rf*100,3)}%')
+
+sns.heatmap(confusion_matrix(y_test,Y_pred_rf),annot=True,fmt='3.0f',cmap="Blues")
+plt.title('Random Forest Confusion Matrix', y=1.05, size=15)
+plt.savefig('Confusion_Matrix_rf.png')
+plt.tight_layout()
+plt.show()
+plt.close()
+
 
 
 
@@ -345,12 +362,8 @@ print(f'Random Forest Accuracy: {round(acc_rf*100,3)}%')
 ##### Anish's ML Algorithms
 print('\nAnish\'s ML Algorithm Results:')
 # Based on: https://www.kaggle.com/vinothan/titanic-model-with-90-accuracy; https://www.kaggle.com/startupsci/titanic-data-science-solutions#Titanic-Data-Science-Solutions
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import StandardScaler
 
-
-# ML Algorithm 3: Linear Regression
+# ML Algorithm 3: Logistical Regression
 from sklearn.linear_model import LogisticRegression
 
 lr_df = combined_df.copy()
@@ -363,15 +376,20 @@ Y_pred_lr = logreg.predict(X_test)
 acc_log = logreg.score(X_train_lr, Y_train_lr)
 print(f'Logistic Regression Accuracy: {round(acc_log*100,3)}%')
 
-# Feature
-coeff_df = pd.DataFrame(combined_df.columns.delete(0)) # Details correlations between features for better understanding (I think we should try to do this for all of our models)
-coeff_df.columns = ['Feature']
-coeff_df["Correlation"] = pd.Series(logreg.coef_[0])
-coeff_df.sort_values(by='Correlation', ascending=False)
-#print(coeff_df)
+sns.heatmap(confusion_matrix(y_test,Y_pred_lr),annot=True,fmt='3.0f',cmap="Blues")
+plt.title('Logistical Regression Confusion Matrix', y=1.05, size=15)
+plt.savefig('Confusion_Matrix_lr.png')
 
 
-# ML Algorithm 4: k-Nearest Neighbors (KNN)
+# # Feature
+# coeff_df = pd.DataFrame(combined_df.columns.delete(0)) # Details correlations between features for better understanding (I think we should try to do this for all of our models)
+# coeff_df.columns = ['Feature']
+# coeff_df["Correlation"] = pd.Series(logreg.coef_[0])
+# coeff_df.sort_values(by='Correlation', ascending=False)
+# #print(coeff_df)
+
+
+# ML Algorithm 4: K-Nearest Neighbors (KNN)
 from sklearn.neighbors import KNeighborsClassifier
 
 knn_df = combined_df.copy()
@@ -383,6 +401,13 @@ knn.fit(X_train_knn, Y_train_knn)
 Y_pred_knn = knn.predict(X_test)
 acc_knn = knn.score(X_train_knn, Y_train_knn)
 print(f'k-Nearest Neighbors Accuracy: {round(acc_knn*100,3)}%')
+
+sns.heatmap(confusion_matrix(y_test,Y_pred_knn),annot=True,fmt='3.0f',cmap="Blues")
+plt.title('k-Nearest Neighbors Confusion Matrix', y=1.05, size=15)
+plt.savefig('Confusion_Matrix_knn.png')
+plt.tight_layout()
+plt.show()
+
 
 ### Post-processing
 
