@@ -20,8 +20,11 @@ run_graphviz = 0 # runs graphviz code to create PDF visualizations
 print_extra_info = 0 # prints extra intermediary information
 # as the script runs.
 
+# WARNING: Need to install mlxtend data visualization package for some of the plots
+# Can simply be done through conda-forge or using 'pip install mlxtend' in PyPI
+
 ########################################################################
-##### Thomas's Data Cleaning and Correlations
+##### Data Cleaning and Correlations
 ### Import Necessary Libraries
 
 import numpy as np # Linear algebra
@@ -32,10 +35,12 @@ import matplotlib.pyplot as plt # Plotting results
 import random as rnd # Random number generator
 
 
-### Thomas's Importing Data
+### Importing Data
+train_csv = r'data\train.csv' # Dataset to train machine learning (ML) algorithms
+test_csv = r'data\test.csv' # Dataset to test ML algorithms
+answer_csv = r'data\gender_submission.csv' # Answerkey dataset
 combined_csv = r'data\test_train_combined.csv' # Dataset with merging solutions and training data into
 # one big dataset
-
 
 # Create Pandas Data Frames
 combined_df = pd.read_csv(combined_csv, index_col=0)
@@ -59,10 +64,10 @@ if show_figures == 1:
     plt.show()
 plt.close()
 
-### Thomas's Data Cleanup
+### Data Cleanup
 
 for dataset in combine: # Perform this action for both the testing and training datasets
-    #  Removing unused columns
+    #  Removing unused columns because too much missing data
     dataset.drop(['Ticket','Cabin'],inplace=True,axis=1)
 
 
@@ -124,36 +129,30 @@ for dataset in combine: # Perform this action for both the testing and training 
 #print(combined_df.isnull())
 
 
-### Anish's Feature Engineering
+### Feature Engineering
 
 ## Title
-   
-titles = {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5} # Define what titles are
+
+import re # Creating a function to extract titles from passenger names
+def get_title(name):
+    title_search = re.search(' ([A-Za-z]+)\.', name) # If the title exists, extract and return it
+    if title_search:
+        return title_search.group(1)
+    return ""
+# Create a new feature Title, containing the titles of passenger names
+for dataset in combine: # Perform this action for both the testing and training datasets
+    dataset['Title'] = dataset['Name'].apply(get_title) # Use the function
 
 for dataset in combine: # Perform this action for both the testing and training datasets
-    dataset['Title'] = dataset.Name.str.extract(' ([A-Za-z]+)\.', expand=False) # Extract titles from names
-    dataset['Title'] = dataset['Title'].replace(['Lady', 'Countess','Capt', 'Col','Don', 'Dr',\
-                                            'Major', 'Rev', 'Sir', 'Jonkheer', 'Dona'], 'Rare') # These are rare titles which may indicate a different relevance than other titles
-    dataset['Title'] = dataset['Title'].replace('Mlle', 'Miss')
+    dataset['Title'] = dataset['Title'].replace(['Lady', 'Countess','Capt', 'Col','Don', 'Dr', 'Major', 'Rev', 'Sir', 'Jonkheer', 'Dona'], 'Rare') # Group all non-common titles into one single grouping "Rare"
+    dataset['Title'] = dataset['Title'].replace('Mlle', 'Miss') # Group Mlle and Ms into a single category "Miss"
     dataset['Title'] = dataset['Title'].replace('Ms', 'Miss')
-    dataset['Title'] = dataset['Title'].replace('Mme', 'Mrs')
-    dataset['Title'] = dataset['Title'].map(titles)  # Convert titles into numbers for ML purposes
-    dataset['Title'] = dataset['Title'].fillna(0)
-
-combined_df = combined_df.drop(['Name'], axis=1)
-
+    dataset['Title'] = dataset['Title'].replace('Mme', 'Mrs') # Group Mme with "Mrs" category
+    dataset.drop(['Name'],inplace=True,axis=1) # Removing unused column now that Title feature has been designed
 
 ## Family Size
 
-#for dataset in combine: # Perform this action for both the testing and training datasets
 combined_df['FamilySize'] = combined_df['SibSp'] + combined_df['Parch'] + 1 # Creates a separate single variable for family size
-#dataset['FamilySize'] = dataset['SibSp'] + dataset['Parch'] + 1 # Creates a separate single variable for family size
-
-    ## Split Embarked data into three boolean columns
-    #dataset = pd.get_dummies(dataset)
-
-
-## Thomas's Remove missing data
 
 # Create Heatmap to Check Again for Entries Missing Data
 # (uncomment the below lines to obtain the plot)
@@ -185,14 +184,14 @@ combined_df = combined_df.dropna()
 
 
 ## Making embarkation data usable
-# Emptry entries had to be removed before this can be done.
+# Empty entries had to be removed before this can be done.
 
 # OPTION 1: Change strings to integers
 
 #ports = {"S": 0, "C": 1, "Q": 2}
 #combined_df['Embarked'] = combined_df['Embarked'].map(ports)
 
-# OPTION 2: Split Embarked data into three boolean columns
+# OPTION 2: Split categorical data into separate boolean columns
 
 combined_df = pd.get_dummies(combined_df)
 # Split the string-based embarked data into three columns with boolean 
@@ -232,7 +231,7 @@ plt.close()
 # Plot should show no missing entries, indicating the data is ready for use with ML
 
 
-### Thomas's Correlations
+### Correlations
 
 # Correlation code based on:
 # https://likegeeks.com/python-correlation-matrix/
@@ -267,7 +266,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.preprocessing import StandardScaler
 
-# ML Algorithm 1: Decision Trees
+## ML Algorithm 1: Decision Trees
 from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier # Older line of code, left for compatibility
 #data = pd.read_csv('../input/classification-suv-dataset/Social_Network_Ads.csv')
@@ -279,26 +278,27 @@ dt = combined_df.copy()
 
 # Column "Embarked" must also be dropped because it contained non-float data, which
 # is incompatible with the Decision Trees algorithm
-X = dt.drop(['Survived'], axis=1)
-y = dt['Survived'] #dt.iloc[:, 4].values
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state = 0)
-sc_X = StandardScaler()
+X = dt.drop(['Survived'], axis=1) # Include the whole dataset as features outside of the Survived
+y = dt['Survived'] #dt.iloc[:, 4].values # Match the X with the Survived column from the dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state = 0) # Splitting combined dataset into 80% train and 20% test
+sc_X = StandardScaler() # Scale and normalize the features into normal distribution
 X_train = sc_X.fit_transform(X_train)
 X_test = sc_X.transform(X_test)
-classifier=tree.DecisionTreeClassifier(criterion="entropy", min_samples_split=100, max_depth=1, random_state=0)
+classifier=tree.DecisionTreeClassifier(criterion="entropy", min_samples_split=100, max_depth=1, random_state=0) # Calling the decision tree classifier from sklearn
 classifier.fit(X_train,y_train)
 y_pred_dt=classifier.predict(X_test)
-acc_dt=accuracy_score(y_test, y_pred_dt)
+acc_dt=accuracy_score(y_test, y_pred_dt) # Calculate the accuracy of decision tree algorithm
 print(f'Decision Trees Accuracy: {round(acc_dt*100,3)}%')
 
-sns.heatmap(confusion_matrix(y_test,y_pred_dt),annot=True,fmt='3.0f',cmap="Blues")
+# Confusion Matrix
+# Based on: https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
+sns.heatmap(confusion_matrix(y_test,y_pred_dt),annot=True,fmt='3.0f',cmap="Blues") # Plotting confusion matrix and cross-validation value for the decision tree algorithm
 plt.title('Decision Trees Matrix', y=1.05, size=15)
 plt.savefig('Confusion_Matrix_dt.png')
 plt.tight_layout()
 if show_figures==1:
     plt.show()
 plt.close()
-
 
 # Documentation on decision trees:
 # https://scikit-learn.org/stable/modules/tree.html#tree
@@ -330,7 +330,43 @@ if run_graphviz == 1:
 
 #print(y_train.astype(str).loc[:])
 
-# ML Algorithm 2: Random Forest
+# Feature Importance for Decision Tree
+# Loosely based on https://machinelearningmastery.com/calculate-feature-importance-with-python/ but mainly from Anish's previous research experience
+# For more comments on each line of code, see the feature importance section for random forest algorithm
+importance = [] # Create an array called importance
+names      = [] # Create an array called names
+
+features = [r'Pclass', r'Male', r'Age', r'SibSp', r'Parch', r'Fare', r'Family Size', r'Embarked_C', r'Embarked_Q', r'Embarked_S', r'Title_Master', r'Title_Miss', r'Title_Mr', r'Title_Mrs', r'Title_Rare'] # List all selected features (to be used as x-axis labels in the plot)
+
+for i in range(len(classifier.feature_importances_)):
+    if classifier.feature_importances_[i] > 0.005: # 0.005 is a general alpha threshold value chosen to determine an "important" feature
+        importance.append(classifier.feature_importances_[i]) # Add importance value to importance array
+        names.append(features[i]) # Add feature name to names array
+
+#print(importance)
+#print(names)
+#print(len(names))
+
+fig, ax = plt.subplots(figsize=(14, 6))
+y_pos     = np.arange(len(names))
+bar_width = 0.20
+opacity   = 0.5
+
+plt.barh(y_pos + 0*bar_width, importance, alpha=opacity, color='b', label='xxx')
+
+plt.yticks(y_pos, names)
+plt.tick_params(axis='x', labelsize = 15)
+plt.tick_params(axis='y', labelsize = 15)
+plt.grid(False)
+plt.ylabel('Features', fontsize = 20)
+plt.tight_layout()
+fig.savefig('feature_importance_dt.png', bbox_inches='tight', dpi=400);
+if show_figures==1:
+    plt.show()
+plt.close()
+
+
+## ML Algorithm 2: Random Forest
 from sklearn.ensemble import RandomForestClassifier
 rf = combined_df.copy()
 #rf.head()
@@ -345,6 +381,8 @@ Y_pred_rf = model.predict(X_test)
 acc_rf = model.score(X_test, y_test)
 print(f'Random Forest Accuracy: {round(acc_rf*100,3)}%')
 
+# Confusion Matrix
+# Based from https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
 sns.heatmap(confusion_matrix(y_test,Y_pred_rf),annot=True,fmt='3.0f',cmap="Blues")
 plt.title('Random Forest Confusion Matrix', y=1.05, size=15)
 plt.tight_layout()
@@ -353,27 +391,63 @@ if show_figures==1:
     plt.show()
 plt.close()
 
+# Feature Importance for Random Forest
+# Loosely based on https://machinelearningmastery.com/calculate-feature-importance-with-python/ but mainly from Anish's previous research experience
+importance = [] # Create an array called importance
+names      = [] # Create an array called names
 
+features = [r'Pclass', r'Male', r'Age', r'SibSp', r'Parch', r'Fare', r'Family Size', r'Embarked_C', r'Embarked_Q', r'Embarked_S', r'Title_Master', r'Title_Miss', r'Title_Mr', r'Title_Mrs', r'Title_Rare'] # List all selected features (to be used as x-axis labels in the plot)
 
+for i in range(len(model.feature_importances_)):
+    if model.feature_importances_[i] > 0.005: # 0.005 is a general alpha threshold value chosen to determine an "important" feature
+        importance.append(model.feature_importances_[i]) # Add importance value to importance array
+        names.append(features[i]) # Add feature name to names array
+
+#print(importance)
+#print(names)
+#print(len(names))
+
+fig, ax = plt.subplots(figsize=(14, 6))
+
+y_pos     = np.arange(len(names))
+bar_width = 0.20
+opacity   = 0.5
+
+plt.barh(y_pos + 0*bar_width, importance, alpha=opacity, color='b', label='xxx')
+
+plt.yticks(y_pos, names)
+plt.tick_params(axis='x', labelsize = 15)
+plt.tick_params(axis='y', labelsize = 15)
+plt.grid(False)
+plt.ylabel('Features', fontsize = 20)
+plt.tight_layout()
+fig.savefig('feature_importance_rf.png', bbox_inches='tight', dpi=400);
+if show_figures==1:
+    plt.show()
+plt.close()
 
 ########################################################################
 ##### Anish's ML Algorithms
 print('\nAnish\'s ML Algorithm Results:')
 # Based on: https://www.kaggle.com/vinothan/titanic-model-with-90-accuracy; https://www.kaggle.com/startupsci/titanic-data-science-solutions#Titanic-Data-Science-Solutions
 
-# ML Algorithm 3: Logistical Regression
+## ML Algorithm 3: Logistic Regression
 from sklearn.linear_model import LogisticRegression
 
-lr_df = combined_df.copy()
-X_train_lr = lr_df.drop(['Survived'], axis=1)
-Y_train_lr = lr_df['Survived']
+lr_df = combined_df.copy() # Create a copy of the dataframe for Logistic Regression algorithm
 
-logreg = LogisticRegression(solver='lbfgs', max_iter=400)
-logreg.fit(X_train_lr, Y_train_lr)
-Y_pred_lr = logreg.predict(X_test)
-acc_log = logreg.score(X_train_lr, Y_train_lr)
+X = lr_df.drop(['Survived'], axis=1) # Establish all the features to be used in the algorithm (i.e. drop the survived column)
+y = lr_df['Survived'] # Needs to model only with respect to the survived column
+X_train_lr, X_test_lr, y_train_lr, y_test_lr = train_test_split(X, y, test_size = 0.20, random_state = 0)
+
+logreg = LogisticRegression(solver='lbfgs', max_iter=1000) # Calling the logreg function from sklearn
+logreg.fit(X_train_lr, y_train_lr) # Determining best fit of the logistic regression from training data (which is the same 80% of passengers as above)
+Y_pred_lr = logreg.predict(X_test_lr) # Predicting Y values depending on test set
+acc_log = logreg.score(X_test_lr, y_test_lr) # Calculating accuracy
 print(f'Logistic Regression Accuracy: {round(acc_log*100,3)}%')
 
+# Confusion Matrix
+# Based from https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
 sns.heatmap(confusion_matrix(y_test,Y_pred_lr),annot=True,fmt='3.0f',cmap="Blues")
 plt.title('Logistical Regression Confusion Matrix', y=1.05, size=15)
 plt.tight_layout()
@@ -382,28 +456,53 @@ if show_figures==1:
     plt.show()
 plt.close()
 
+# Data Analysis Visualization
 
-# Another way to view feature correlations (uncomment to see in terminal output)
-# coeff_df = pd.DataFrame(combined_df.columns.delete(0)) # Details correlations between features for better understanding (I think we should try to do this for all of our models)
-# coeff_df.columns = ['Feature']
-# coeff_df["Correlation"] = pd.Series(logreg.coef_[0])
-# coeff_df.sort_values(by='Correlation', ascending=False)
-# #print(coeff_df)
+print(logreg.intercept_) # Gives the intercept of the best fit logistic regression equation found by the algorithm
+print(logreg.coef_) # Gives the coefficients of the best fit logistic regression equation for each feature found by the algorithm
 
+plt.plot(X_test, Y_pred_lr, 'o'); # Plotting the data points predicted
+plt.tight_layout()
+plt.savefig('Plot_lr.png')
+if show_figures==1:
+    plt.show()
+plt.close()
 
-# ML Algorithm 4: K-Nearest Neighbors (KNN)
+# Feature Importance for Logistic Regression
+
+# Based on: https://machinelearningmastery.com/calculate-feature-importance-with-python/ but mainly from Anish's previous research experience
+
+importance = logreg.coef_[0] # Get feature importance values from algorithm
+plt.bar([r'Pclass', r'Male', r'Age', r'SibSp', r'Parch', r'Fare', r'Family Size', r'Embarked_C', r'Embarked_Q', r'Embarked_S', r'Title_Master', r'Title_Miss', r'Title_Mr', r'Title_Mrs', r'Title_Rare'], importance) # Plot feature importance for logistic regression algorithm
+
+plt.xticks(rotation=45)
+plt.tick_params(axis='x', labelsize = 12)
+plt.tick_params(axis='y', labelsize = 15)
+plt.grid(False)
+plt.xlabel('Features', fontsize = 20)
+plt.tight_layout()
+
+fig.savefig('feature_importance_lr.png', bbox_inches='tight', dpi=400);
+if show_figures==1:
+    plt.show()
+plt.close()
+
+## ML Algorithm 4: K-Nearest Neighbors (KNN)
 from sklearn.neighbors import KNeighborsClassifier
 
 knn_df = combined_df.copy()
-X_train_knn = knn_df.drop(['Survived'], axis=1)
-Y_train_knn = knn_df['Survived']
+X = knn_df.drop(['Survived'], axis=1)
+y = knn_df['Survived']
+X_train_knn, X_test_knn, y_train_knn, y_test_knn = train_test_split(X, y, test_size = 0.20, random_state = 0)
 
 knn = KNeighborsClassifier(n_neighbors = 3)
-knn.fit(X_train_knn, Y_train_knn)
-Y_pred_knn = knn.predict(X_test)
-acc_knn = knn.score(X_train_knn, Y_train_knn)
+knn.fit(X_train_knn, y_train_knn)
+Y_pred_knn = knn.predict(X_test_knn)
+acc_knn = knn.score(X_test_knn, y_test_knn)
 print(f'k-Nearest Neighbors Accuracy: {round(acc_knn*100,3)}%')
 
+# Confusion Matrix
+# Based from https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
 sns.heatmap(confusion_matrix(y_test,Y_pred_knn),annot=True,fmt='3.0f',cmap="Blues")
 plt.title('k-Nearest Neighbors Confusion Matrix', y=1.05, size=15)
 plt.tight_layout()
@@ -412,13 +511,17 @@ if show_figures==1:
     plt.show()
 plt.close()
 
+# Feature Importance for k-Nearest Neighbors
 
-### Post-processing
+# Based on https://machinelearningmastery.com/calculate-feature-importance-with-python/
+# k-Nearest Neighbors is one of the algorithms that does not support feature importance or feature selection natively
 
-# Model Evaluation
+##################################################################################### Post-processing
+
+## Model Evaluation
 print('\n')
 models = pd.DataFrame({
     'Model': ['Decision Trees', 'Random Forest', 'Logistic Regression', 'k-Nearest Neighbors'],
-    'Score': [acc_dt, acc_rf, acc_log, acc_knn]})
-models.sort_values(by='Score', ascending=False)
+    'Score': [acc_dt, acc_rf, acc_log, acc_knn]}) # Tag each ML algorithm with its respective accuracy score
+models.sort_values(by='Score', ascending=False) # Sort by descending score
 print(models)
